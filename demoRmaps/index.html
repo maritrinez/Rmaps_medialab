@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maps with R</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Maps with R">
+  <meta name="author" content="Beatriz Martínez">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="libraries/widgets/interactive/css/aceeditor.css"></link>
+<link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Maps with R</h1>
+    <h2>Workshop</h2>
+    <p>Beatriz Martínez<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>CONTENT</h2>
+  </hgroup>
+  <article data-timings="">
+    <ol class = "build incremental">
+<li>Read shapefiles into R...</li>
+<li class='..and'>plot some meaningful data.</li>
+<li>Plot a map on a streetmap (ggplot + ggmap)</li>
+<li>Remove the background street map. </li>
+<li>googleVis</li>
+</ol>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>GET READY</h4>
+
+<p>&nbsp;
+&nbsp;</p>
+
+<pre><code class="r">wd &lt;- &quot;/Users/martinez/Dropbox/R&quot;
+
+setwd(paste(wd, &quot;/R_maps_workshop_slidify&quot;, sep = &quot;&quot;))
+
+# Download the source from http://www.stats.ox.ac.uk/pub/RWin/bin/macosx/mavericks/contrib/3.1/
+# install.packages(&quot;packages/rgdal_0.8-16.tgz&quot;, repos = NULL)
+# install.packages(&quot;packages/rgeos_0.3-4.tgz&quot;, repos = NULL)
+library(rgeos)
+library(rgdal)
+
+library(sp)
+library(maptools)
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>POINT SHAPEFILES: the parks</h4>
+
+<p>&nbsp;</p>
+
+<blockquote>
+<p>Load a Shapefile into R  (downladed from <a href="http://www.madrid.org%0A/nomecalles/DescargaBDTCorte.icm">madrid.org</a>) </p>
+</blockquote>
+
+<pre><code class="r"># get info
+getinfo.shape(&quot;Shapefiles/MAD_CM_parques_jardines/parques.shp&quot;)
+</code></pre>
+
+<pre><code>## Shapefile type: Point, (1), # of Shapes: 93
+</code></pre>
+
+<pre><code class="r"># set projection
+ED50&lt;-CRS(paste(&quot;+proj=utm +zone=30 +ellps=intl +units=m +no_defs&quot;))
+# http://cicero.azavea.com/docs/epsg_codes.html equal to &#39;ED50(ED77) 
+# / UTM zone 38N&#39; but Marid is in the UTM zone 30
+
+# read the shapefile
+parquesMadrid &lt;- readShapePoints(&quot;Shapefiles/MAD_CM_parques_jardines/parques.shp&quot;, proj4string = ED50)
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h5>Shapefiles structure</h5>
+
+<pre><code class="r">str(parquesMadrid, max.level = 2)
+</code></pre>
+
+<pre><code>## Formal class &#39;SpatialPointsDataFrame&#39; [package &quot;sp&quot;] with 5 slots
+##   ..@ data       :&#39;data.frame&#39;:  93 obs. of  9 variables:
+##   .. ..- attr(*, &quot;data_types&quot;)= chr [1:9] &quot;N&quot; &quot;C&quot; &quot;C&quot; &quot;C&quot; ...
+##   ..@ coords.nrs : num(0) 
+##   ..@ coords     : num [1:93, 1:2] 474496 468752 446390 446099 445527 ...
+##   .. ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   ..@ bbox       : num [1:2, 1:2] 401341 4432124 474496 4502774
+##   .. ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   ..@ proj4string:Formal class &#39;CRS&#39; [package &quot;sp&quot;] with 1 slot
+</code></pre>
+
+<pre><code class="r">parquesMadrid@bbox
+</code></pre>
+
+<pre><code>##               min     max
+## coords.x1  401341  474496
+## coords.x2 4432124 4502774
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-5" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h5>Shapefiles structure</h5>
+
+<pre><code class="r">head(parquesMadrid@data)
+</code></pre>
+
+<pre><code>##   CODIGO2 CMUN            MUNICIPIO
+## 0       1  005 Alcal\xe1 de Henares
+## 1       2  005 Alcal\xe1 de Henares
+## 2       3  006           Alcobendas
+## 3       4  006           Alcobendas
+## 4       5  006           Alcobendas
+## 5       6  007          Alcorc\xf3n
+##                                   ETIQUETA
+## 0 Real Jard\xedn Bot\xe1nico Juan Carlos I
+## 1            Parque Municipal O\xb4Donnell
+## 2                     Jard\xedn de la Vega
+## 3                    Parque de Catalu\xf1a
+## 4                      Parque de Andalucia
+## 5               Parque Ciudad de Mayar\xed
+##                                                           BUSCA
+## 0 Real Jard\xedn Bot\xe1nico Juan Carlos I (Parques y Jardines)
+## 1            Parque Municipal O\xb4Donnell (Parques y Jardines)
+## 2                     Jard\xedn de la Vega (Parques y Jardines)
+## 3                    Parque de Catalu\xf1a (Parques y Jardines)
+## 4                      Parque de Andalucia (Parques y Jardines)
+## 5               Parque Ciudad de Mayar\xed (Parques y Jardines)
+##                                                  DIRECCION  UTM_X   UTM_Y
+## 0                            Crta. Nacional II, km. 33,800 474496 4486278
+## 1                            Calle V\xeda Complutense, s/n 468752 4481807
+## 2 Avda. Ol\xedmpica, s/n (N-I, salida 16) c/v Avda. Ermita 446390 4487596
+## 3                        Calle Marqu\xe9s de Valdavia,  23 446099 4488225
+## 4             Avda. Valdelaparra, c/v Avda. Pintor Murillo 445527 4488011
+## 5                                         Calle Viena, s/n 428843 4467353
+##                                                                              INFOR
+## 0        Real Jard\xedn Bot\xe1nico Juan Carlos I&lt;br&gt;Crta. Nacional II, km. 33,800
+## 1                   Parque Municipal O\xb4Donnell&lt;br&gt;Calle V\xeda Complutense, s/n
+## 2 Jard\xedn de la Vega&lt;br&gt;Avda. Ol\xedmpica, s/n (N-I, salida 16) c/v Avda. Ermita
+## 3                       Parque de Catalu\xf1a&lt;br&gt;Calle Marqu\xe9s de Valdavia,  23
+## 4              Parque de Andalucia&lt;br&gt;Avda. Valdelaparra, c/v Avda. Pintor Murillo
+## 5                                   Parque Ciudad de Mayar\xed&lt;br&gt;Calle Viena, s/n
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-6" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h5>Simple plot</h5>
+
+<pre><code class="r"># which objtect plot, and by which variable set the color.
+plot(parquesMadrid, col = parquesMadrid$MUNICIPIO)
+</code></pre>
+
+<p><img src="assets/fig/simple_plot-1.png" alt="plot of chunk simple_plot"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-7" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h5>Simple plot</h5>
+
+<pre><code class="r"># plot a subset
+parquesMadrid &lt;- parquesMadrid[parquesMadrid$MUNICIPIO == &quot;Madrid&quot;, ]
+plot(parquesMadrid, col = parquesMadrid$MUNICIPIO)
+</code></pre>
+
+<p><img src="assets/fig/simple_plot_2-1.png" alt="plot of chunk simple_plot_2"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-8" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h5>Simple plot</h5>
+
+<pre><code class="r"># add format attributes
+plot(parquesMadrid, pch = 20, cex = 2, col = &quot;springgreen3&quot;)
+</code></pre>
+
+<p><img src="assets/fig/simple_plot_3-1.png" alt="plot of chunk simple_plot_3"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-9" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>POLYGON SHAPEFILES: the neighborhoods</h4>
+
+<p>&nbsp;
+&nbsp;</p>
+
+<pre><code class="r">getinfo.shape(&quot;Shapefiles/MAD_barrios_madrid/barrios_madrid.shp&quot;)
+</code></pre>
+
+<pre><code>## Shapefile type: Polygon, (5), # of Shapes: 128
+</code></pre>
+
+<pre><code class="r">barriosMadrid &lt;- readShapePoly(&quot;Shapefiles/MAD_barrios_madrid/barrios_madrid.shp&quot;, proj4string = ED50)
+class(barriosMadrid)
+</code></pre>
+
+<pre><code>## [1] &quot;SpatialPolygonsDataFrame&quot;
+## attr(,&quot;package&quot;)
+## [1] &quot;sp&quot;
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-10" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>POLYGON SHAPEFILES: the neighborhoods</h4>
+
+<pre><code class="r">str(barriosMadrid, max.level = 2)
+</code></pre>
+
+<pre><code>## Formal class &#39;SpatialPolygonsDataFrame&#39; [package &quot;sp&quot;] with 5 slots
+##   ..@ data       :&#39;data.frame&#39;:  128 obs. of  3 variables:
+##   .. ..- attr(*, &quot;data_types&quot;)= chr [1:3] &quot;N&quot; &quot;C&quot; &quot;C&quot;
+##   ..@ polygons   :List of 128
+##   .. .. [list output truncated]
+##   ..@ plotOrder  : int [1:128] 44 112 114 51 125 52 106 54 127 120 ...
+##   ..@ bbox       : num [1:2, 1:2] 424864 4462774 456134 4499579
+##   .. ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   ..@ proj4string:Formal class &#39;CRS&#39; [package &quot;sp&quot;] with 1 slot
+</code></pre>
+
+<pre><code class="r">barriosMadrid@bbox
+</code></pre>
+
+<pre><code>##         min       max
+## x  424864.2  456133.8
+## y 4462773.5 4499578.9
+</code></pre>
+
+<pre><code class="r">head(barriosMadrid@data)
+</code></pre>
+
+<pre><code>##   CODBDT GEOCODIGO          DESBDT
+## 0 722505    079011     011 Palacio
+## 1 722506    079012 012 Embajadores
+## 2 722507    079013      013 Cortes
+## 3 722508    079014    014 Justicia
+## 4 722509    079015 015 Universidad
+## 5 722510    079016         016 Sol
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-11" style="background:;">
+  <hgroup>
+    <h2>1. Read shapefiles into R...</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>POLYGON SHAPEFILES: the neighborhoods</h4>
+
+<pre><code class="r">plot(barriosMadrid)
+plot(parquesMadrid, pch = 20, cex = 2, col = &quot;springgreen3&quot;, add = TRUE)
+</code></pre>
+
+<p><img src="assets/fig/simple_plot_4-1.png" alt="plot of chunk simple_plot_4"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-12" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>&nbsp;&nbsp;</p>
+
+<p>Merge the meaningful data (e.g. neigborhoods density) with the SpatialPolygonDataFrame @data slot.</p>
+
+<p>&nbsp; </p>
+
+<ol>
+<li>read the neigborhoods density.</li>
+<li>get ready to merge both data frames </li>
+<li>merge them</li>
+<li>and plot!</li>
+</ol>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-13" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Read the neigborhoods density.</h4>
+
+<p>downladed from <a href="http://www-2.munimadrid.es/CSE6/control/seleccionDatos?numSerie=14010100010">munimadrid</a>
+&nbsp;</p>
+
+<pre><code class="r">denMad &lt;- read.csv(&quot;Data/denBarriosMad.csv&quot;, sep = &quot;;&quot;, stringsAsFactors = FALSE)
+colnames(denMad) &lt;- c(&quot;Barrio&quot;, &quot;Densidad&quot;)
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-14" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Get ready both data frames.</h4>
+
+<pre><code class="r">head(denMad)
+</code></pre>
+
+<pre><code>##                   Barrio Densidad
+## 1 TOTAL CIUDAD DE MADRID       53
+## 2             01. CENTRO      265
+## 3           01.1 Palacio      155
+## 4       01.2 Embajadores      460
+## 5            01.3 Cortes      184
+## 6          01.4 Justicia      229
+</code></pre>
+
+<pre><code class="r">head(barriosMadrid@data)
+</code></pre>
+
+<pre><code>##   CODBDT GEOCODIGO          DESBDT
+## 0 722505    079011     011 Palacio
+## 1 722506    079012 012 Embajadores
+## 2 722507    079013      013 Cortes
+## 3 722508    079014    014 Justicia
+## 4 722509    079015 015 Universidad
+## 5 722510    079016         016 Sol
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-15" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Get ready both data frames: denMad</h4>
+
+<pre><code class="r"># Get rid off the &#39;distritos&#39;
+# &#39;barrios&#39; have the structure ##.# Barrioname 
+# remove the &quot;.&quot;
+
+denMad &lt;- denMad[which(grepl(&quot;[0-9]{2}\\.[0-9]&quot;, denMad$Barrio) == TRUE), ]
+denMad$Barrio &lt;- gsub(&quot;.&quot;, &quot;&quot;, denMad$Barrio, fixed = TRUE)
+head(denMad)
+</code></pre>
+
+<pre><code>##            Barrio Densidad
+## 3     011 Palacio      155
+## 4 012 Embajadores      460
+## 5      013 Cortes      184
+## 6    014 Justicia      229
+## 7 015 Universidad      343
+## 8         016 Sol      176
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-16" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Get ready both data frames: denMad</h4>
+
+<pre><code class="r"># Detach neighborhood name from neighborhood code
+barriosNamesCodes &lt;- do.call(rbind, strsplit(sub(&quot; &quot;, &quot;\\.&quot;, denMad$Barrio), &quot;\\.&quot;))
+head(barriosNamesCodes)
+</code></pre>
+
+<pre><code>##      [,1]  [,2]         
+## [1,] &quot;011&quot; &quot;Palacio&quot;    
+## [2,] &quot;012&quot; &quot;Embajadores&quot;
+## [3,] &quot;013&quot; &quot;Cortes&quot;     
+## [4,] &quot;014&quot; &quot;Justicia&quot;   
+## [5,] &quot;015&quot; &quot;Universidad&quot;
+## [6,] &quot;016&quot; &quot;Sol&quot;
+</code></pre>
+
+<pre><code class="r">denMad$Barrio &lt;- barriosNamesCodes[ ,2]
+denMad$BarrioCod &lt;- barriosNamesCodes[ ,1]
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-17" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Get ready both data frames: denMad</h4>
+
+<pre><code class="r">head(denMad)
+</code></pre>
+
+<pre><code>##        Barrio Densidad BarrioCod
+## 3     Palacio      155       011
+## 4 Embajadores      460       012
+## 5      Cortes      184       013
+## 6    Justicia      229       014
+## 7 Universidad      343       015
+## 8         Sol      176       016
+</code></pre>
+
+<pre><code class="r">head(barriosMadrid@data)
+</code></pre>
+
+<pre><code>##   CODBDT GEOCODIGO          DESBDT
+## 0 722505    079011     011 Palacio
+## 1 722506    079012 012 Embajadores
+## 2 722507    079013      013 Cortes
+## 3 722508    079014    014 Justicia
+## 4 722509    079015 015 Universidad
+## 5 722510    079016         016 Sol
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-18" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Get ready both data frames: barriosMadrid SpatialPolygonDataFrame</h4>
+
+<pre><code class="r"># Set the proper encoding
+barriosMadrid$DESBDT &lt;- iconv(barriosMadrid$DESBDT, &quot;latin1&quot;, &quot;UTF-8&quot;)
+
+# Detach neighborhood name from neighborhood code
+barriosNamesCodes &lt;- strsplit(sub(&quot; &quot;, &quot;\\.&quot;, barriosMadrid$DESBDT), &quot;\\.&quot;)
+barriosNamesCodes &lt;- do.call(rbind, barriosNamesCodes)
+head(barriosNamesCodes)
+</code></pre>
+
+<pre><code>##      [,1]  [,2]         
+## [1,] &quot;011&quot; &quot;Palacio&quot;    
+## [2,] &quot;012&quot; &quot;Embajadores&quot;
+## [3,] &quot;013&quot; &quot;Cortes&quot;     
+## [4,] &quot;014&quot; &quot;Justicia&quot;   
+## [5,] &quot;015&quot; &quot;Universidad&quot;
+## [6,] &quot;016&quot; &quot;Sol&quot;
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-19" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Get ready both data frames: barriosMadrid SpatialPolygonDataFrame</h4>
+
+<pre><code class="r">barriosMadrid$BarrioCod &lt;- barriosNamesCodes[ ,1]
+barriosMadrid$Barrio &lt;- barriosNamesCodes[ ,2]
+head(barriosMadrid@data)
+</code></pre>
+
+<pre><code>##   CODBDT GEOCODIGO          DESBDT BarrioCod      Barrio
+## 0 722505    079011     011 Palacio       011     Palacio
+## 1 722506    079012 012 Embajadores       012 Embajadores
+## 2 722507    079013      013 Cortes       013      Cortes
+## 3 722508    079014    014 Justicia       014    Justicia
+## 4 722509    079015 015 Universidad       015 Universidad
+## 5 722510    079016         016 Sol       016         Sol
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-20" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Merge both data frames</h4>
+
+<pre><code class="r">length(denMad$Barrio)
+</code></pre>
+
+<pre><code>## [1] 128
+</code></pre>
+
+<pre><code class="r">length(barriosMadrid$DESBDT)
+</code></pre>
+
+<pre><code>## [1] 128
+</code></pre>
+
+<pre><code class="r">identical(sort(barriosMadrid$BarrioCod), sort(denMad$BarrioCod))
+</code></pre>
+
+<pre><code>## [1] TRUE
+</code></pre>
+
+<pre><code class="r">barriosMadrid@data &lt;- merge(barriosMadrid@data, denMad[ ,c(2,3)])
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-21" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Merge both data frames</h4>
+
+<pre><code class="r">head(barriosMadrid@data)
+</code></pre>
+
+<pre><code>##   BarrioCod CODBDT GEOCODIGO          DESBDT      Barrio Densidad
+## 1       011 722505    079011     011 Palacio     Palacio      155
+## 2       012 722506    079012 012 Embajadores Embajadores      460
+## 3       013 722507    079013      013 Cortes      Cortes      184
+## 4       014 722508    079014    014 Justicia    Justicia      229
+## 5       015 722509    079015 015 Universidad Universidad      343
+## 6       016 722510    079016         016 Sol         Sol      176
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-22" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot!</h4>
+
+<pre><code class="r">plot(barriosMadrid, col = barriosMadrid$Densidad)
+</code></pre>
+
+<p><img src="assets/fig/plot_data-1.png" alt="plot of chunk plot_data"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-23" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot!</h4>
+
+<pre><code class="r"># Plot with SP library using custom colors
+library(RColorBrewer)
+colors &lt;- colorRampPalette(brewer.pal(9, &quot;YlGnBu&quot;))(16)
+spplot(barriosMadrid, &quot;Densidad&quot;, col.regions = colors)
+</code></pre>
+
+<p><img src="assets/fig/plot_data_1-1.png" alt="plot of chunk plot_data_1"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-24" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot! Customized colors using the <code>plot</code> function</h4>
+
+<pre><code class="r"># Cut the variable into breaks and assign a color to every interval.
+cut &lt;- cut(barriosMadrid$Densidad,breaks=c(0,25,50,75,100,150,200,250,300,350,500))
+barriosMadrid$cut &lt;- cut
+colors &lt;- colorRampPalette(brewer.pal(9, &quot;YlGnBu&quot;))(10)
+cutColors &lt;- cut(barriosMadrid$Densidad,breaks=c(0,25,50,75,100,150,200,250,300,350,500), labels = colors)
+barriosMadrid$colors &lt;- cutColors
+
+head(barriosMadrid@data)
+</code></pre>
+
+<pre><code>##   BarrioCod CODBDT GEOCODIGO          DESBDT      Barrio Densidad
+## 1       011 722505    079011     011 Palacio     Palacio      155
+## 2       012 722506    079012 012 Embajadores Embajadores      460
+## 3       013 722507    079013      013 Cortes      Cortes      184
+## 4       014 722508    079014    014 Justicia    Justicia      229
+## 5       015 722509    079015 015 Universidad Universidad      343
+## 6       016 722510    079016         016 Sol         Sol      176
+##         cut  colors
+## 1 (150,200] #30A5C2
+## 2 (350,500] #081D58
+## 3 (150,200] #30A5C2
+## 4 (200,250] #1E80B8
+## 5 (300,350] #21318D
+## 6 (150,200] #30A5C2
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-25" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot! Customized colors using the <code>plot</code> function</h4>
+
+<pre><code class="r">plot(barriosMadrid, col = as.character(barriosMadrid@data$colors))
+legend(&quot;bottomleft&quot;, cex = .7, legend = levels(barriosMadrid$cut), fill = colors, title = &quot;Population density Madrid (2013)&quot;)
+</code></pre>
+
+<p><img src="assets/fig/plot_data_3-1.png" alt="plot of chunk plot_data_3"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-26" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot! Add neighborhoods labels</h4>
+
+<pre><code class="r"># calculate the polygons centers
+# the coordinates function gives the centers of an SpatialPolygonDataFrame
+cents &lt;- coordinates(barriosMadrid)
+head(cents)
+</code></pre>
+
+<pre><code>##       [,1]    [,2]
+## 0 439528.9 4474317
+## 1 440497.1 4473624
+## 2 440990.3 4474246
+## 3 441010.5 4475220
+## 4 440128.7 4475452
+## 5 440335.8 4474520
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-27" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot!</h4>
+
+<pre><code class="r">#png(&quot;labels.png&quot;, width = 2500, height = 2100)
+plot(barriosMadrid, col = as.character(barriosMadrid@data$colors))
+plot(parquesMadrid, pch = 20, cex = 4, col = &quot;springgreen3&quot;, add = TRUE)
+pointLabel(cents[ ,1], cents[ ,2], labels=barriosMadrid$Barrio)
+legend(&quot;bottomleft&quot;, cex = .9, legend = levels(barriosMadrid$cut), fill = colors, title = &quot;Population density Madrid (2013)&quot;)
+</code></pre>
+
+<p><img src="assets/fig/labels_1-1.png" alt="plot of chunk labels_1"> </p>
+
+<pre><code class="r">#dev.off()
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-28" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot!: density as points</h4>
+
+<pre><code class="r"># maptools function
+# plot as many dots as people living in every polygon
+dots &lt;- dotsInPolys(barriosMadrid, barriosMadrid$Densidad)
+plot(dots, pch = 16, cex = .1, col = &quot;violetred3&quot;)
+</code></pre>
+
+<p><img src="assets/fig/den_as_points-1.png" alt="plot of chunk den_as_points"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-29" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot!: density as points over the neighborhood and include the parks</h4>
+
+<pre><code class="r">plot(barriosMadrid, col = &quot;grey90&quot;)
+plot(dots, pch = 16, cex = .1, col = &quot;violetred3&quot;, add = TRUE)
+plot(parquesMadrid, pch = 20, cex = 1, col = &quot;springgreen3&quot;, add = TRUE)
+</code></pre>
+
+<p><img src="assets/fig/den_as_points_1-1.png" alt="plot of chunk den_as_points_1"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-30" style="background:;">
+  <hgroup>
+    <h2>2. ... and plot some meaningful data</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>and plot!: include the metro lines</h4>
+
+<pre><code class="r">metroLines &lt;- readShapeLines(&quot;Shapefiles/MAD_lineas_metro/lineas.shp&quot;, proj4string = ED50)
+
+plot(barriosMadrid, col = &quot;grey90&quot;)
+plot(dots, pch = 16, cex = .1, col = &quot;violetred3&quot;, add = TRUE)
+plot(parquesMadrid, pch = 20, cex = 1, col = &quot;springgreen3&quot;, add = TRUE)
+plot(metroLines, col = &quot;turquoise3&quot;, lwd = 2, add = TRUE)
+</code></pre>
+
+<p><img src="assets/fig/metro-1.png" alt="plot of chunk metro"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-31" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>ggplot2 + ggmap</h4>
+
+<p>&nbsp;</p>
+
+<p>The <strong>rgdal</strong> and <strong>rgeos</strong> libraries are required. </p>
+
+<p>&nbsp;
+&nbsp;</p>
+
+<ol>
+<li>Change the coordinate system, as we have UTM in our objects and ggplot works on <strong>long, lat</strong> coordinates.<br></li>
+<li>Create a dataframe from the Spatial**DataFrame data slot, containing the long and lat variables, as ggplot plots do not plot Spatial objects but dataframes.</li>
+<li>and plot! (ggplot2 + ggmap)</li>
+</ol>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-32" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Change the coordinate system</h4>
+
+<pre><code class="r">str(barriosMadrid, max.level = 2)
+</code></pre>
+
+<pre><code>## Formal class &#39;SpatialPolygonsDataFrame&#39; [package &quot;sp&quot;] with 5 slots
+##   ..@ data       :&#39;data.frame&#39;:  128 obs. of  8 variables:
+##   ..@ polygons   :List of 128
+##   .. .. [list output truncated]
+##   ..@ plotOrder  : int [1:128] 44 112 114 51 125 52 106 54 127 120 ...
+##   ..@ bbox       : num [1:2, 1:2] 424864 4462774 456134 4499579
+##   .. ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   ..@ proj4string:Formal class &#39;CRS&#39; [package &quot;sp&quot;] with 1 slot
+</code></pre>
+
+<pre><code class="r">barriosMadrid@proj4string
+</code></pre>
+
+<pre><code>## CRS arguments:
+##  +proj=utm +zone=30 +ellps=intl +units=m +no_defs
+</code></pre>
+
+<pre><code class="r"># Transform the coordinates to lon lat
+barriosLongLat &lt;- spTransform(barriosMadrid, CRS(&quot;+proj=longlat&quot;))  
+parquesLongLat &lt;- spTransform(parquesMadrid, CRS(&quot;+proj=longlat&quot;))
+metroLongLat &lt;- spTransform(metroLines, CRS(&quot;+proj=longlat&quot;))
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-33" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Create a dataframe from the Spatial**DataFrame data slot.</h4>
+
+<h4>Points DataFrame to ggplot</h4>
+
+<pre><code class="r">library(ggplot2)
+
+# Points DataFrame to ggplot
+head(coordinates(parquesLongLat))
+</code></pre>
+
+<pre><code>##    coords.x1 coords.x2
+## 24 -3.615614  40.40292
+## 25 -3.698585  40.48262
+## 26 -3.709616  40.48038
+## 27 -3.598206  40.45714
+## 28 -3.681976  40.39302
+## 29 -3.654543  40.39753
+</code></pre>
+
+<pre><code class="r">long &lt;- coordinates(parquesLongLat)[, 1]  
+lat &lt;- coordinates(parquesLongLat)[, 2]
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-34" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Create a dataframe from the Spatial**DataFrame data slot.</h4>
+
+<h4>Points DataFrame to ggplot</h4>
+
+<pre><code class="r">dataParques &lt;- cbind(parquesLongLat@data, long, lat)
+head(dataParques)
+</code></pre>
+
+<pre><code>##    CODIGO2 CMUN MUNICIPIO                                      ETIQUETA
+## 24      25  079    Madrid Parque Forestal de Valdebernardo (VicÃ¡lvaro)
+## 25      26  079    Madrid                                  Parque Norte
+## 26      27  079    Madrid                          Parque de la Vaguada
+## 27      28  079    Madrid         Parque El Capricho (Alameda de Osuna)
+## 28      29  079    Madrid        Parque Enrique Tierno GalvÃ¡n (Madrid)
+## 29      30  079    Madrid                    Parque Cerro del TÃ­o PÃ­o
+##                                                                 BUSCA
+## 24 Parque Forestal de Valdebernardo (VicÃ¡lvaro) (Parques y Jardines)
+## 25                                  Parque Norte (Parques y Jardines)
+## 26                          Parque de la Vaguada (Parques y Jardines)
+## 27         Parque El Capricho (Alameda de Osuna) (Parques y Jardines)
+## 28        Parque Enrique Tierno GalvÃ¡n (Madrid) (Parques y Jardines)
+## 29                    Parque Cerro del TÃ­o PÃ­o (Parques y Jardines)
+##                                              DIRECCION  UTM_X   UTM_Y
+## 24                                Avda. Democracia, 29 447759 4472738
+## 25                       Avda. Monforte de Lemos , s/n 440788 4481637
+## 26                         Avda. Monforte de Lemos, 42 439851 4481396
+## 27                              Avda. de LogroÃ±o, s/n 449277 4478747
+## 28                          Avda. del Planetario , s/n 442119 4471681
+## 29 Barrio de Vallecas cerca de la Avda. de la Albufera 444451 4472164
+##                                                                                INFOR
+## 24             Parque Forestal de Valdebernardo (VicÃ¡lvaro)&lt;br&gt;Avda. Democracia, 29
+## 25                                     Parque Norte&lt;br&gt;Avda. Monforte de Lemos , s/n
+## 26                               Parque de la Vaguada&lt;br&gt;Avda. Monforte de Lemos, 42
+## 27                   Parque El Capricho (Alameda de Osuna)&lt;br&gt;Avda. de LogroÃ±o, s/n
+## 28              Parque Enrique Tierno GalvÃ¡n (Madrid)&lt;br&gt;Avda. del Planetario , s/n
+## 29 Parque Cerro del TÃ­o PÃ­o&lt;br&gt;Barrio de Vallecas cerca de la Avda. de la Albufera
+##         long      lat
+## 24 -3.615614 40.40292
+## 25 -3.698585 40.48262
+## 26 -3.709616 40.48038
+## 27 -3.598206 40.45714
+## 28 -3.681976 40.39302
+## 29 -3.654543 40.39753
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-35" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Create a dataframe from the Spatial**DataFrame data slot.</h4>
+
+<h4>Points DataFrame to ggplot</h4>
+
+<pre><code class="r">ggplot(dataParques, aes(long, lat)) +
+geom_point(colour = &quot;springgreen3&quot;, size = 4)
+</code></pre>
+
+<p><img src="assets/fig/ggplot_5-1.png" alt="plot of chunk ggplot_5"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-36" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Create a dataframe from the Spatial**DataFrame data slot.</h4>
+
+<h4>Polygons DataFrame to ggplot</h4>
+
+<pre><code class="r"># The coordinates are the centers
+head(coordinates(barriosLongLat))
+</code></pre>
+
+<pre><code>##        [,1]     [,2]
+## 0 -3.712742 40.41658
+## 1 -3.701266 40.41042
+## 2 -3.695512 40.41605
+## 3 -3.695364 40.42483
+## 4 -3.705780 40.42685
+## 5 -3.703251 40.41848
+</code></pre>
+
+<pre><code class="r">barriosLongLat@data$id &lt;- rownames(barriosLongLat@data)
+head(barriosLongLat@data)
+</code></pre>
+
+<pre><code>##   BarrioCod CODBDT GEOCODIGO          DESBDT      Barrio Densidad
+## 1       011 722505    079011     011 Palacio     Palacio      155
+## 2       012 722506    079012 012 Embajadores Embajadores      460
+## 3       013 722507    079013      013 Cortes      Cortes      184
+## 4       014 722508    079014    014 Justicia    Justicia      229
+## 5       015 722509    079015 015 Universidad Universidad      343
+## 6       016 722510    079016         016 Sol         Sol      176
+##         cut  colors id
+## 1 (150,200] #30A5C2  1
+## 2 (350,500] #081D58  2
+## 3 (150,200] #30A5C2  3
+## 4 (200,250] #1E80B8  4
+## 5 (300,350] #21318D  5
+## 6 (150,200] #30A5C2  6
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-37" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Create a dataframe from the Spatial**DataFrame data slot.</h4>
+
+<h4>Polygons DataFrame to ggplot</h4>
+
+<pre><code class="r"># magic
+dataBarrios &lt;- fortify(barriosLongLat, region=&quot;id&quot;) 
+class(dataBarrios)
+</code></pre>
+
+<pre><code>## [1] &quot;data.frame&quot;
+</code></pre>
+
+<pre><code class="r">head(dataBarrios)
+</code></pre>
+
+<pre><code>##        long      lat order  hole piece group id
+## 1 -3.708078 40.42364     1 FALSE     1   1.1  1
+## 2 -3.707932 40.42355     2 FALSE     1   1.1  1
+## 3 -3.707775 40.42345     3 FALSE     1   1.1  1
+## 4 -3.707687 40.42339     4 FALSE     1   1.1  1
+## 5 -3.707599 40.42333     5 FALSE     1   1.1  1
+## 6 -3.707521 40.42328     6 FALSE     1   1.1  1
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-38" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Create a dataframe from the Spatial**DataFrame data slot.</h4>
+
+<h4>Polygons DataFrame to ggplot</h4>
+
+<pre><code class="r">dataBarrios &lt;- merge(dataBarrios, barriosLongLat@data)
+head(dataBarrios)
+</code></pre>
+
+<pre><code>##   id      long      lat order  hole piece group BarrioCod CODBDT GEOCODIGO
+## 1  1 -3.708078 40.42364     1 FALSE     1   1.1       011 722505    079011
+## 2  1 -3.707932 40.42355     2 FALSE     1   1.1       011 722505    079011
+## 3  1 -3.707775 40.42345     3 FALSE     1   1.1       011 722505    079011
+## 4  1 -3.707687 40.42339     4 FALSE     1   1.1       011 722505    079011
+## 5  1 -3.707599 40.42333     5 FALSE     1   1.1       011 722505    079011
+## 6  1 -3.707521 40.42328     6 FALSE     1   1.1       011 722505    079011
+##        DESBDT  Barrio Densidad       cut  colors
+## 1 011 Palacio Palacio      155 (150,200] #30A5C2
+## 2 011 Palacio Palacio      155 (150,200] #30A5C2
+## 3 011 Palacio Palacio      155 (150,200] #30A5C2
+## 4 011 Palacio Palacio      155 (150,200] #30A5C2
+## 5 011 Palacio Palacio      155 (150,200] #30A5C2
+## 6 011 Palacio Palacio      155 (150,200] #30A5C2
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-39" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Create a dataframe from the Spatial**DataFrame data slot.</h4>
+
+<h4>Lines DataFrame to ggplot</h4>
+
+<pre><code class="r">metroLongLat@data$id &lt;- rownames(metroLongLat@data)
+dataMetro &lt;- fortify(metroLongLat, region=&quot;id&quot;)  # requires rgeos package
+dataMetro &lt;- merge(dataMetro, metroLongLat@data)
+head(dataMetro)
+</code></pre>
+
+<pre><code>##   id      long      lat order piece group ETIQUETA
+## 1  0 -3.765998 40.24729     1     1   0.1       TP
+## 2  0 -3.766046 40.24718     2     1   0.1       TP
+## 3  0 -3.766149 40.24691     3     1   0.1       TP
+## 4  0 -3.766229 40.24671     4     1   0.1       TP
+## 5  0 -3.766502 40.24605     5     1   0.1       TP
+## 6  0 -3.767064 40.24459     6     1   0.1       TP
+</code></pre>
+
+<pre><code class="r">unique(dataMetro$ETIQUETA)
+</code></pre>
+
+<pre><code>##  [1] TP     L9     L1     ML-1   L3     L10    ML-2   L11    L2     L12   
+## [11] ML-3   L4     L6     Ramal  L5     L8     L7     Transb
+## 18 Levels: L1 L10 L11 L12 L2 L3 L4 L5 L6 L7 L8 L9 ML-1 ML-2 ML-3 ... Transb
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-40" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Plot them! get the map</h4>
+
+<pre><code class="r">library(ggmap)
+MadridMap &lt;- qmap(location = &quot;Museo del Prado&quot;, zoom = 15, source = &quot;google&quot;)
+</code></pre>
+
+<pre><code>## Map from URL : http://maps.googleapis.com/maps/api/staticmap?center=Museo+del+Prado&amp;zoom=15&amp;size=640x640&amp;scale=2&amp;maptype=terrain&amp;language=en-EN&amp;sensor=false
+## Information from URL : http://maps.googleapis.com/maps/api/geocode/json?address=Museo+del+Prado&amp;sensor=false
+</code></pre>
+
+<pre><code class="r">MadridMap
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-1-1.png" alt="plot of chunk unnamed-chunk-1"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-41" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Plot them! get the map</h4>
+
+<pre><code class="r">MadridMap &lt;- qmap(location = barriosLongLat@bbox, zoom = 11, maptype = &quot;terrain&quot;)  # Get the map from Google maps
+</code></pre>
+
+<pre><code>## converting bounding box to center/zoom specification. (experimental)
+## Map from URL : http://maps.googleapis.com/maps/api/staticmap?center=40.478877,-3.702281&amp;zoom=11&amp;size=640x640&amp;scale=2&amp;maptype=terrain&amp;language=en-EN&amp;sensor=false
+</code></pre>
+
+<pre><code class="r">MadridMap
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-2-1.png" alt="plot of chunk unnamed-chunk-2"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-42" style="background:;">
+  <hgroup>
+    <h2>3. Plot a map on a street map</h2>
+  </hgroup>
+  <article data-timings="">
+    <h4>Plot them! get the map</h4>
+
+<pre><code class="r">MadridMap + 
+  geom_polygon(aes( x = long, y = lat, group = group, fill = Densidad), data = dataBarrios, alpha = 0.5, colour = &quot;white&quot;) +
+  scale_fill_gradient(low=&quot;grey90&quot;, high=&quot;black&quot;, limits=c(0,500)) +
+  geom_path(aes(x = long, y = lat, group = group), data = dataMetro, colour = &quot;turquoise3&quot;) +
+    geom_point(aes(x = long, y = lat), data = dataParques,  , size = 5, alpha = 0.8, colour = &quot;springgreen3&quot;)+
+    theme(legend.position = &quot;none&quot;)
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-3-1.png" alt="plot of chunk unnamed-chunk-3"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-43" style="background:;">
+  <hgroup>
+    <h2>4. Plot a map with ggplot without a background street map.</h2>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">ggplot() + geom_polygon(aes(x=long, y=lat, group = group, fill = Densidad), data = dataBarrios) + 
+    scale_fill_gradient(low=&quot;grey90&quot;, high=&quot;black&quot;, limits=c(0,500)) +
+    geom_point(aes(x=long, y=lat, size = 5), data = dataParques, colour = &quot;springgreen3&quot;) +
+    geom_path(aes(x=long, y = lat, group = group), data = dataMetro, colour = &quot;turquoise3&quot;) +
+    theme(legend.position = &quot;none&quot;, 
+      panel.background = element_blank(),
+      panel.grid = element_blank(),
+      axis.ticks = element_blank(),
+      text = element_blank())
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-4-1.png" alt="plot of chunk unnamed-chunk-4"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-44" style="background:;">
+  <hgroup>
+    <h2>5. googleVis</h2>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">library(googleVis)
+suppressPackageStartupMessages(library(googleVis))
+emigrantes &lt;- read.csv(&quot;Data/emigrantes.csv&quot;, sep = &quot;;&quot;)
+head(emigrantes)
+</code></pre>
+
+<pre><code>##     X                pais  X2008  X2009  X2010  X2011  X2012
+## 1 131    PAIS DESCONOCIDO  52069  94850 134790 138972 146309
+## 2 132 BAJAS POR CADUCIDAD 142315 154213 163515 139223 130421
+## 3  82             AMERICA  26993  29440  29319  36618  43667
+## 4  92             Ecuador   1693   3027   4292   6668  10622
+## 5  29         Reino Unido   5186   5339   6249   8237   8055
+## 6  17             Francia   4394   4338   5105   6130   6960
+</code></pre>
+
+<pre><code class="r"># me quedo las que no empiezan por dos mayúsculas
+emigrantes &lt;- emigrantes[which(grepl(&quot;^[A-Z]{2}&quot;, emigrantes$pais) == FALSE), ]
+head(emigrantes)
+</code></pre>
+
+<pre><code>##     X           pais X2008 X2009 X2010 X2011 X2012
+## 4  92        Ecuador  1693  3027  4292  6668 10622
+## 5  29    Reino Unido  5186  5339  6249  8237  8055
+## 6  17        Francia  4394  4338  5105  6130  6960
+## 7   8       Alemania  3991  4123  4658  5904  6577
+## 10 32        Rumanía  5854  5673  4875  5076  5359
+## 11 94 Estados Unidos  4163  3897  3647  4891  4498
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-45" style="background:;">
+  <hgroup>
+    <h2>5. googleVis</h2>
+  </hgroup>
+  <article data-timings="">
+     
+<div class='row-fluid'>
+  <div class='span5'>
+    <form id="knitForm45" data-cell="45">
+      <pre><code class="r">emigrantesMap &lt;- gvisGeoChart(emigrantes, locationvar = &quot;pais&quot;, colorvar = &quot;X2012&quot;, options = list(width = 600, height = 400))
+print(emigrantesMap, tag = &#39;chart&#39;)
+</code></pre>
+
+<!-- GeoChart generated in R 3.1.2 by googleVis 0.5.8 package -->
+
+<!-- Tue Apr 14 14:26:22 2015 -->
+
+<!-- jsHeader -->
+
+<script type="text/javascript">
+ 
+// jsData 
+function gvisDataGeoChartID75ded5978d0 () {
+var data = new google.visualization.DataTable();
+var datajson =
+[
+ [
+ "Ecuador",
+10622 
+],
+[
+ "Reino Unido",
+8055 
+],
+[
+ "Francia",
+6960 
+],
+[
+ "Alemania",
+6577 
+],
+[
+ "Rumanía",
+5359 
+],
+[
+ "Estados Unidos",
+4498 
+],
+[
+ "Colombia",
+4190 
+],
+[
+ "Marruecos",
+3894 
+],
+[
+ "Argentina",
+3544 
+],
+[
+ "Suiza",
+3217 
+],
+[
+ "Bolivia",
+3128 
+],
+[
+ "Venezuela",
+3036 
+],
+[
+ "Bélgica",
+2805 
+],
+[
+ "Perú",
+2698 
+],
+[
+ "Brasil",
+2574 
+],
+[
+ "Chile",
+1965 
+],
+[
+ "Países Bajos",
+1677 
+],
+[
+ "Italia",
+1642 
+],
+[
+ "Portugal",
+1636 
+],
+[
+ "China",
+1354 
+],
+[
+ "Bulgaria",
+1265 
+],
+[
+ "Paraguay",
+1260 
+],
+[
+ "República Dominicana",
+1222 
+],
+[
+ "Uruguay",
+1127 
+],
+[
+ "México",
+1050 
+],
+[
+ "Asia: Otros países",
+975 
+],
+[
+ "Cuba",
+727 
+],
+[
+ "Andorra",
+694 
+],
+[
+ "Polonia",
+645 
+],
+[
+ "Ucrania",
+635 
+],
+[
+ "Canadá",
+628 
+],
+[
+ "Australia",
+609 
+],
+[
+ "Suecia",
+589 
+],
+[
+ "Irlanda",
+539 
+],
+[
+ "Austria",
+498 
+],
+[
+ "Argelia",
+482 
+],
+[
+ "Noruega",
+462 
+],
+[
+ "Honduras",
+392 
+],
+[
+ "Panamá",
+387 
+],
+[
+ "Guinea Ecuatorial",
+357 
+],
+[
+ "Rusia",
+355 
+],
+[
+ "Dinamarca",
+305 
+],
+[
+ "India",
+279 
+],
+[
+ "Arabia Saudí",
+268 
+],
+[
+ "Nicaragua",
+257 
+],
+[
+ "Pakistán",
+250 
+],
+[
+ "Senegal",
+243 
+],
+[
+ "Luxemburgo",
+219 
+],
+[
+ "Finlandia",
+218 
+],
+[
+ "Lituania",
+213 
+],
+[
+ "Filipinas",
+205 
+],
+[
+ "Japón",
+197 
+],
+[
+ "República Checa",
+171 
+],
+[
+ "Nigeria",
+168 
+],
+[
+ "Turquía",
+143 
+],
+[
+ "Guatemala",
+142 
+],
+[
+ "Hungría",
+140 
+],
+[
+ "Sudáfrica",
+138 
+],
+[
+ "África: Otros países",
+119 
+],
+[
+ "El Salvador",
+110 
+],
+[
+ "Georgia",
+106 
+],
+[
+ "República Eslovaca",
+100 
+],
+[
+ "Gambia",
+95 
+],
+[
+ "Moldova",
+92 
+],
+[
+ "Corea (República de)",
+92 
+],
+[
+ "Egipto",
+90 
+],
+[
+ "Israel",
+85 
+],
+[
+ "Costa Rica",
+84 
+],
+[
+ "Mauritania",
+83 
+],
+[
+ "Indonesia",
+83 
+],
+[
+ "Tailandia",
+81 
+],
+[
+ "Serbia",
+74 
+],
+[
+ "Bangladesh",
+65 
+],
+[
+ "Grecia",
+58 
+],
+[
+ "Vietnam",
+56 
+],
+[
+ "Líbano",
+50 
+],
+[
+ "Malí",
+49 
+],
+[
+ "Nueva Zelanda",
+49 
+],
+[
+ "Ghana",
+47 
+],
+[
+ "Angola",
+45 
+],
+[
+ "Malta",
+43 
+],
+[
+ "Armenia",
+39 
+],
+[
+ "Etiopía",
+39 
+],
+[
+ "Croacia",
+38 
+],
+[
+ "Kenia",
+37 
+],
+[
+ "Túnez",
+34 
+],
+[
+ "Letonia",
+32 
+],
+[
+ "Islandia",
+30 
+],
+[
+ "Costa de Marfil",
+30 
+],
+[
+ "Guinea-Bissau",
+28 
+],
+[
+ "Cabo Verde",
+26 
+],
+[
+ "América: Otros países",
+26 
+],
+[
+ "Jordania",
+24 
+],
+[
+ "Camerún",
+23 
+],
+[
+ "Bielorrusia",
+22 
+],
+[
+ "Eslovenia",
+21 
+],
+[
+ "Chipre",
+20 
+],
+[
+ "Bosnia y Herzegovina",
+19 
+],
+[
+ "Guinea",
+18 
+],
+[
+ "Estonia",
+17 
+],
+[
+ "Siria",
+17 
+],
+[
+ "Kazajstán",
+16 
+],
+[
+ "Albania",
+13 
+],
+[
+ "Liechtenstein",
+13 
+],
+[
+ "Irán",
+13 
+],
+[
+ "Macedonia (Ex-República Yugoslava de)",
+11 
+],
+[
+ "Burkina Faso",
+10 
+],
+[
+ "Nepal",
+10 
+],
+[
+ "Congo (República del)",
+9 
+],
+[
+ "Irak",
+8 
+],
+[
+ "Congo (República Democrática del)",
+7 
+],
+[
+ "Oceanía: Otros países",
+7 
+],
+[
+ "Benín",
+6 
+],
+[
+ "Resto de Europa: Otros países",
+4 
+],
+[
+ "Sierra Leona",
+4 
+],
+[
+ "Togo",
+4 
+],
+[
+ "Liberia",
+3 
+],
+[
+ "Dominica",
+0 
+] 
+];
+data.addColumn('string','pais');
+data.addColumn('number','X2012');
+data.addRows(datajson);
+return(data);
+}
+ 
+// jsDrawChart
+function drawChartGeoChartID75ded5978d0() {
+var data = gvisDataGeoChartID75ded5978d0();
+var options = {};
+options["width"] =    600;
+options["height"] =    400;
+
+    var chart = new google.visualization.GeoChart(
+    document.getElementById('GeoChartID75ded5978d0')
+    );
+    chart.draw(data,options);
+    
+
+}
+  
+ 
+// jsDisplayChart
+(function() {
+var pkgs = window.__gvisPackages = window.__gvisPackages || [];
+var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
+var chartid = "geochart";
+  
+// Manually see if chartid is in pkgs (not all browsers support Array.indexOf)
+var i, newPackage = true;
+for (i = 0; newPackage && i < pkgs.length; i++) {
+if (pkgs[i] === chartid)
+newPackage = false;
+}
+if (newPackage)
+  pkgs.push(chartid);
+  
+// Add the drawChart function to the global list of callbacks
+callbacks.push(drawChartGeoChartID75ded5978d0);
+})();
+function displayChartGeoChartID75ded5978d0() {
+  var pkgs = window.__gvisPackages = window.__gvisPackages || [];
+  var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
+  window.clearTimeout(window.__gvisLoad);
+  // The timeout is set to 100 because otherwise the container div we are
+  // targeting might not be part of the document yet
+  window.__gvisLoad = setTimeout(function() {
+  var pkgCount = pkgs.length;
+  google.load("visualization", "1", { packages:pkgs, callback: function() {
+  if (pkgCount != pkgs.length) {
+  // Race condition where another setTimeout call snuck in after us; if
+  // that call added a package, we must not shift its callback
+  return;
+}
+while (callbacks.length > 0)
+callbacks.shift()();
+} });
+}, 100);
+}
+ 
+// jsFooter
+</script>
+ 
+
+<!-- jsChart -->  
+
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID75ded5978d0"></script>
+ 
+
+<!-- divChart -->
+
+<div id="GeoChartID75ded5978d0" 
+  style="width: 600; height: 400;">
+</div>
+
+<pre><code class="r"># plot(emigrantesMap)
+# cat(emigrantesMap$html$chart, file=&quot;emigrantes2012.html&quot;)
+</code></pre>
+
+      <div id='aceeditor45' style="height:px;"></div>
+      <div class='interactive btn-toolbar pull-left'>
+        <div class='btn-group'>
+          <a class='btn btn-small action-button' id='runCode45' data-action='runCode'
+            data-cell='45' rel='tooltip' data-title='Run Code'>
+            <i class='icon-play'></i>
+          </a>
+          <a class='btn btn-small iBtn' id='testCode45' data-action='testCode'
+             data-cell='45' rel='tooltip' data-title='Test Code'>
+            <i class='icon-check'></i>
+          </a>
+          <a class='btn btn-small iBtn' id='clearResult45' data-action='clearResult'
+             data-cell='45' rel='tooltip' data-title='Clear Output'>
+            <i class="icon-remove"></i>
+          </a>
+          <a class='btn  btn-small iBtn' id='getHint45' rel='tooltip' 
+            data-title="Get Hint" data-action='getHint'
+            data-cell='45' data-hint="">
+            <i class="icon-bookmark"></i>
+          </a>
+        </div>
+      </div>    </form>
+  </div>
+  <div class='span7'>
+    <iframe id="knitResult45" class='shiny-html-output'></iframe>
+  </div>
+</div>
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-46" style="background:;">
+  <article data-timings="">
+    <p>&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;</p>
+
+<h2>R to cartoDB</h2>
+
+<p><a href="http://rpubs.com/walkerke/r2cartodb">walkerke RPubs</a></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='CONTENT'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='1. Read shapefiles into R...'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='1. Read shapefiles into R...'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='1. Read shapefiles into R...'>
+         4
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=5 title='1. Read shapefiles into R...'>
+         5
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=6 title='1. Read shapefiles into R...'>
+         6
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=7 title='1. Read shapefiles into R...'>
+         7
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=8 title='1. Read shapefiles into R...'>
+         8
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=9 title='1. Read shapefiles into R...'>
+         9
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=10 title='1. Read shapefiles into R...'>
+         10
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=11 title='1. Read shapefiles into R...'>
+         11
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=12 title='2. ... and plot some meaningful data'>
+         12
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=13 title='2. ... and plot some meaningful data'>
+         13
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=14 title='2. ... and plot some meaningful data'>
+         14
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=15 title='2. ... and plot some meaningful data'>
+         15
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=16 title='2. ... and plot some meaningful data'>
+         16
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=17 title='2. ... and plot some meaningful data'>
+         17
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=18 title='2. ... and plot some meaningful data'>
+         18
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=19 title='2. ... and plot some meaningful data'>
+         19
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=20 title='2. ... and plot some meaningful data'>
+         20
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=21 title='2. ... and plot some meaningful data'>
+         21
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=22 title='2. ... and plot some meaningful data'>
+         22
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=23 title='2. ... and plot some meaningful data'>
+         23
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=24 title='2. ... and plot some meaningful data'>
+         24
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=25 title='2. ... and plot some meaningful data'>
+         25
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=26 title='2. ... and plot some meaningful data'>
+         26
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=27 title='2. ... and plot some meaningful data'>
+         27
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=28 title='2. ... and plot some meaningful data'>
+         28
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=29 title='2. ... and plot some meaningful data'>
+         29
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=30 title='2. ... and plot some meaningful data'>
+         30
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=31 title='3. Plot a map on a street map'>
+         31
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=32 title='3. Plot a map on a street map'>
+         32
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=33 title='3. Plot a map on a street map'>
+         33
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=34 title='3. Plot a map on a street map'>
+         34
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=35 title='3. Plot a map on a street map'>
+         35
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=36 title='3. Plot a map on a street map'>
+         36
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=37 title='3. Plot a map on a street map'>
+         37
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=38 title='3. Plot a map on a street map'>
+         38
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=39 title='3. Plot a map on a street map'>
+         39
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=40 title='3. Plot a map on a street map'>
+         40
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=41 title='3. Plot a map on a street map'>
+         41
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=42 title='3. Plot a map on a street map'>
+         42
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=43 title='4. Plot a map with ggplot without a background street map.'>
+         43
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=44 title='5. googleVis'>
+         44
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=45 title='5. googleVis'>
+         45
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=46 title=''>
+         46
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  <script src="libraries/widgets/interactive/js/ace/js/ace.js"></script>
+<script src="libraries/widgets/interactive/js/opencpu-0.5.js"></script>
+<script src="libraries/widgets/interactive/js/interactive.js"></script>
+
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
